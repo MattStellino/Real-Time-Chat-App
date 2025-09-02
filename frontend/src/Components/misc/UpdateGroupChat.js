@@ -28,7 +28,7 @@ const UpdateGroupChatModal = ({fetchAgain, setFetchAgain, fetchMessages}) => {
   if (!groupChatName) return;
 
   try {
-    const response = await fetch(`http://localhost:5000/api/chat/rename`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/chat/rename`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ const UpdateGroupChatModal = ({fetchAgain, setFetchAgain, fetchMessages}) => {
 
     const handleAddUser = async (userToAdd) => {
     try {
-        const response = await fetch(`http://localhost:5000/api/chat/AddToGroup`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/chat/AddToGroup`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -79,7 +79,7 @@ const UpdateGroupChatModal = ({fetchAgain, setFetchAgain, fetchMessages}) => {
 
     const handleRemove = async (userToRemove) => {
     try {
-        const response = await fetch(`http://localhost:5000/api/chat/groupleave`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/chat/groupleave`, {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ const UpdateGroupChatModal = ({fetchAgain, setFetchAgain, fetchMessages}) => {
 
     try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/api/user/search?query=${search}`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/user/search?query=${search}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

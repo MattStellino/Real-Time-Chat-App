@@ -59,7 +59,7 @@ const GroupChatModal = ({ children }) => {
       setError(null);
 
       const response = await abortableFetch(
-        `http://localhost:5000/api/user/search?query=${encodeURIComponent(searchQuery)}`,
+        `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/user/search?query=${encodeURIComponent(searchQuery)}`,
         {
           method: 'GET',
           headers: {
@@ -210,7 +210,7 @@ const GroupChatModal = ({ children }) => {
         users: selectedUsers.map(u => u._id),
       };
 
-      const response = await fetch('http://localhost:5000/api/chat/group', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/chat/group`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -137,7 +137,7 @@ const ChatDetails = ({ isOpen, chatId, onClose }) => {
     setIsSavingTitle(true);
     try {
       // Call API to update group chat title
-      const response = await fetch(`http://localhost:5000/api/chat/${chatId}/title`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/chat/${chatId}/title`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${user.token}`,

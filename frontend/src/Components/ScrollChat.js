@@ -90,7 +90,7 @@ const ScrollChat = ({messages, updateMessageReadReceipt}) => {
       }
       
       // Call the backend API to mark all messages as read
-      const response = await fetch(`http://localhost:5000/api/message/chat/${selectedChat._id}/read`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/message/chat/${selectedChat._id}/read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -231,7 +231,7 @@ const ScrollChat = ({messages, updateMessageReadReceipt}) => {
                       <div key={attIndex} className="message-attachment">
                         {attachment.type === 'image' ? (
                           <img 
-                            src={`http://localhost:5000${attachment.url}`}
+                            src={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${attachment.url}`}
                             alt={attachment.filename || 'Image'}
                             className="attachment-image"
                             loading="lazy"
@@ -240,7 +240,7 @@ const ScrollChat = ({messages, updateMessageReadReceipt}) => {
                         ) : attachment.type === 'video' ? (
                           <div className="attachment-video">
                             <video 
-                              src={`http://localhost:5000${attachment.url}`}
+                              src={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${attachment.url}`}
                               controls
                               className="attachment-video-player"
                               preload="metadata"

@@ -263,7 +263,7 @@ const Composer = ({ onMessageSent }) => {
 
       
 
-      const response = await fetch('http://localhost:5000/api/message', {
+              const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/message`, {
         method: 'POST',
         headers: {
           'Content-type': 'application/json',

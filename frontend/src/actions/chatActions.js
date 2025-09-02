@@ -213,7 +213,7 @@ export const markChatAsRead = (chatId, userId) => ({
 export const updateGroupChatTitle = (chatId, newTitle) => async (dispatch, getState) => {
   try {
     const { token } = getState().auth;
-    const response = await fetch(`http://localhost:5000/api/chat/${chatId}/title`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/chat/${chatId}/title`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -249,7 +249,7 @@ export const updateGroupChatTitle = (chatId, newTitle) => async (dispatch, getSt
 export const addUserToGroup = (chatId, userId) => async (dispatch, getState) => {
   try {
     const { token } = getState().auth;
-    const response = await fetch(`http://localhost:5000/api/chat/groupadd`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/chat/groupadd`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -284,7 +284,7 @@ export const addUserToGroup = (chatId, userId) => async (dispatch, getState) => 
 export const removeUserFromGroup = (chatId, userId) => async (dispatch, getState) => {
   try {
     const { token } = getState().auth;
-    const response = await fetch(`http://localhost:5000/api/chat/groupleave`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/chat/groupleave`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -319,7 +319,7 @@ export const removeUserFromGroup = (chatId, userId) => async (dispatch, getState
 export const leaveGroup = (chatId) => async (dispatch, getState) => {
   try {
     const { token } = getState().auth;
-    const response = await fetch(`http://localhost:5000/api/chat/${chatId}/leave`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/chat/${chatId}/leave`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

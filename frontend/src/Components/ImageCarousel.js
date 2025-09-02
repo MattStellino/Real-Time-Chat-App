@@ -75,7 +75,7 @@ const ImageCarousel = ({ images, currentIndex, onClose }) => {
         {/* Main image */}
         <div className="image-carousel-main">
           <img
-            src={`http://localhost:5000${currentImage.url}`}
+            src={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${currentImage.url}`}
             alt={currentImage.filename || 'Chat image'}
             className="image-carousel-image"
           />
@@ -94,7 +94,7 @@ const ImageCarousel = ({ images, currentIndex, onClose }) => {
             {images.map((image, index) => (
               <img
                 key={index}
-                src={`http://localhost:5000${image.url}`}
+                src={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${image.url}`}
                 alt={`Thumbnail ${index + 1}`}
                 className={`image-carousel-thumbnail ${index === currentImageIndex ? 'active' : ''}`}
                 onClick={() => setCurrentImageIndex(index)}

@@ -22,7 +22,7 @@ const MyChats = () => {
     try {
       setIsRefreshing(true);
       
-      const response = await fetch("http://localhost:5000/api/chat", {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/chat`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       
@@ -116,7 +116,7 @@ const MyChats = () => {
     if (chat.unreadCount > 0) {
       try {
 
-        const response = await fetch(`http://localhost:5000/api/message/chat/${chat._id}/read`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/message/chat/${chat._id}/read`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,

@@ -63,7 +63,7 @@ const TopSearch = () => {
 
         // Try your existing endpoint first
         let resp = await fetch(
-          `http://localhost:5000/api/user/search?query=${encodeURIComponent(query)}`,
+          `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/user/search?query=${encodeURIComponent(query)}`,
           {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
@@ -74,9 +74,9 @@ const TopSearch = () => {
         // Fallbacks if your server uses different paths
         if (resp.status === 404) {
           const fallbacks = [
-            `http://localhost:5000/api/users/search?query=${encodeURIComponent(query)}`,
-            `http://localhost:5000/api/users?query=${encodeURIComponent(query)}`,
-            `http://localhost:5000/api/users/search?q=${encodeURIComponent(query)}`,
+            `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/users/search?query=${encodeURIComponent(query)}`,
+                          `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/users?query=${encodeURIComponent(query)}`,
+                          `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/users/search?q=${encodeURIComponent(query)}`,
           ];
           for (const url of fallbacks) {
             try {

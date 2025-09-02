@@ -1,7 +1,7 @@
 // uploadFile.js
 // Usage: uploadFile(file, { onProgress, token, useCookies, signalRef })
 export function uploadFile(file, opts = {}) {
-  const { onProgress, token, useCookies = false, url = "http://localhost:5000/api/message/upload", signalRef } = opts;
+  const { onProgress, token, useCookies = false, url = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/message/upload`, signalRef } = opts;
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
