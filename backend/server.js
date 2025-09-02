@@ -64,7 +64,7 @@ connectDB();
 const app = express();
 // Secure CORS configuration
 const allowedOrigins = process.env.NODE_ENV === 'production' 
-  ? [process.env.FRONTEND_URL] 
+  ? [process.env.FRONTEND_URL, 'https://live-chat-6qzymnh7z-mattstellinos-projects.vercel.app'].filter(Boolean)
   : ["http://localhost:3000", "http://localhost:3001"];
 
 app.use(cors({
@@ -75,6 +75,7 @@ app.use(cors({
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log('CORS blocked origin:', origin, 'Allowed origins:', allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
