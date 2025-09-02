@@ -1,26 +1,23 @@
 import React, { useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { loginUser } from '../actions/authActions';
-import { InputText } from 'primereact/inputtext';
-import { Button } from 'primereact/button';
-import { Card } from 'primereact/card';
-import { Toast } from 'primereact/toast';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const dispatch = useDispatch();
-  const toast = useRef(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     if (!email || !password) {
-      toast.current.show({ severity: 'error', summary: 'Error', detail: 'Please enter all fields', life: 3000 });
+      setError('Please enter all fields');
       setLoading(false);
       return;
     }
@@ -34,51 +31,61 @@ const Login = () => {
 
       if (response.ok) {
         const data = await response.json();
-        dispatch({ type: 'USER_LOGIN', payload: { token: data.token } }); // Update auth state
+
+        dispatch({ type: 'USER_LOGIN', payload: { token: data.user.token } });
         dispatch({ type: 'SET_USER', payload: data.user });
-
-        // Debugging: Log the data received from the server
-        console.log('Login response data:', data);
-
-        dispatch(loginUser(data));
-        toast.current.show({ severity: 'success', summary: 'Success', detail: 'Logged in successfully', life: 3000 });
+        dispatch(loginUser(data.user));
         setEmail('');
         setPassword('');
         navigate('/chats');
       } else {
-        // Debugging: Log the error response
-        console.error('Login error response:', response);
-
-        toast.current.show({ severity: 'error', summary: 'Login Error', detail: 'Login failed', life: 3000 });
+        setError('Login failed. Please check your credentials.');
       }
     } catch (error) {
-      // Debugging: Log any errors that occur during the login process
-      console.error('Login error:', error);
-
-      toast.current.show({ severity: 'error', summary: 'Login Error', detail: error.message, life: 3000 });
+      setError('Network error. Please try again.');
     }
 
     setLoading(false);
   };
-  
 
   return (
-    <div className="login-card">
-      <Card className="p-fluid">
-        <form onSubmit={handleSubmit}>
-          <div className="p-field">
-            <label htmlFor="email">Email</label><br/><br/>
-            <InputText id="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          </div>
-          <div className="p-field">
-            <label htmlFor="password">Password</label><br/><br/>
-            <InputText id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
-          <Button label="Login" icon="pi pi-sign-in" disabled={loading} />
-        </form>
-      </Card>
-      <Toast ref={toast} />
-    </div>
+    <form onSubmit={handleSubmit} className="auth-form">
+      {error && <div className="error-message">{error}</div>}
+      
+      <div className="form-group">
+        <label htmlFor="email" className="form-label">Email</label>
+        <input
+          id="email"
+          type="email"
+          className="form-input"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter your email"
+          required
+        />
+      </div>
+      
+      <div className="form-group">
+        <label htmlFor="password" className="form-label">Password</label>
+        <input
+          id="password"
+          type="password"
+          className="form-input"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Enter your password"
+          required
+        />
+      </div>
+      
+      <button 
+        type="submit" 
+        className={`auth-button ${loading ? 'loading' : ''}`}
+        disabled={loading}
+      >
+        {loading ? 'Signing in...' : 'Sign In'}
+      </button>
+    </form>
   );
 };
 

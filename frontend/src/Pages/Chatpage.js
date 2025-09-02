@@ -1,61 +1,265 @@
 import MyChats from "../Components/MyChats";
-import Chatbox from "../Components/Chatbox";
-import Header from "../Components/Header";
-import { Card } from 'primereact/card';
-import React, { useState } from "react";
-import { useSelector } from 'react-redux';
+import ChatPane from "../Components/ChatPane";
+import TopSearch from "../Components/TopSearch";
+import ChatDetails from "../Components/ChatDetails";
+import React, { useState, useEffect, useRef } from "react";
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../actions/authActions';
+import { closeChatDetails, resetSelectedChat } from '../actions/chatActions';
+import { getSender } from '../config/ChatLogics';
+import { useNavigate } from 'react-router-dom';
+import { OverlayPanel } from 'primereact/overlaypanel';
+import useChromeNotifications from '../notifications/useChromeNotifications';
+import socketService from '../services/socketService';
+import '../styles/topsearch.css';
 
 const Chatpage = () => {
-
   const [fetchAgain, setFetchAgain] = useState(false);
-  // Inline selector to check the authentication status
+
+
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 767);
+  const [mobileView, setMobileView] = useState('chatList'); // 'chatList' or 'chatView'
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
-  console.log(isAuthenticated)
+  const { selectedChat, ui } = useSelector((state) => state.chat);
+  const { user } = useSelector((state) => state.user);
+  const { isDetailsOpen, detailsForChatId, isSearchOpen, isEditOpen } = ui;
 
- return (
-  <div style={{ 
-    width: '100%',
-    height: '100vh',
-    display: 'flex', 
-    flexDirection: 'column', 
-    backgroundColor: '#038037',
-    color: 'black', 
-    fontFamily: 'Monospace   ', 
-    }}>
-    {isAuthenticated && (
-      <div style={{ 
-      width: '100%',
-      borderBottom: '1px solid mediumseagreen',
-      paddingBottom: '20px',
-      paddingTop: '0px', }}>
-        <Header />
-      </div>
-    )}
 
-    <div style={{ display: 'flex', flexDirection: 'row', flex: 1 }}> 
-      {isAuthenticated && (
-        <Card style={{ 
-          height: '78vh',
-          width: '25%', overflowY: "hidden",
-          border: '1px solid mediumseagreen'
-            }}>
-          <MyChats fetchAgain={fetchAgain} />
-        </Card>
-      )}
 
-      {isAuthenticated && (
-        <div style={{ flex: 1,
-         backgroundColor: '#038037'
-         }}> 
-          <Chatbox fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
+
+  // Initialize socket connection
+  useEffect(() => {
+    if (user?.token) {
+      const socket = socketService.connect(user.token);
+      return () => {
+        socketService.disconnect();
+      };
+    }
+  }, [user?.token]);
+
+  // Handle incoming messages and play sound
+  const handleIncomingMessage = (message) => {
+    // Add message to the appropriate chat in Redux store
+    // This would typically dispatch an action to add the message
+
+    // TODO: Add message to Redux store
+  };
+
+  // Use the Chrome notification hook
+  useChromeNotifications({
+    socket: socketService.getSocket(),
+    currentUserId: user?._id,
+    onIncomingMessageUpsert: handleIncomingMessage
+  });
+
+
+
+  // Handle user menu toggle
+  const toggleUserMenu = (event) => {
+    setUserMenuOpen(!userMenuOpen);
+  };
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth <= 767;
+      setIsMobile(mobile);
+  
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+
+
+  // Handle chat selection (mobile navigation)
+  const handleChatSelect = (chat) => {
+            if (isMobile) {
+          setMobileView('chatView');
+        }
+  };
+
+  // Handle back to chat list (mobile navigation)
+  const handleBackToChatList = () => {
+            setMobileView('chatList');
+    dispatch(resetSelectedChat());
+  };
+
+  // Auto-switch to chat view if chat is selected on mobile
+  useEffect(() => {
+    if (isMobile && selectedChat && mobileView === 'chatList') {
+              setMobileView('chatView');
+    }
+  }, [isMobile, selectedChat]);
+
+  // Handle escape key to close user menu
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === 'Escape' && userMenuOpen) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [userMenuOpen]);
+
+
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/');
+    setUserMenuOpen(false);
+  };
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  // Debug logging
+  
+
+  return (
+    <div className="app">
+      {/* Navigation Bar */}
+      <nav className="navbar">
+        <div className="navbar-left">
+          {/* Back button for mobile chat view */}
+          {isMobile && mobileView === 'chatView' && (
+            <button 
+              className="navbar-button back-button"
+              onClick={handleBackToChatList}
+              aria-label="Back to chats"
+            >
+              <i className="pi pi-arrow-left"></i>
+            </button>
+          )}
+          
+          <div className="navbar-brand">
+            <i className="pi pi-comments"></i>
+            <span>ChatApp</span>
+          </div>
+          
+
         </div>
+        
+        <div className="navbar-center">
+          <TopSearch />
+        </div>
+        
+        <div className="navbar-right">
+          <div className="navbar-user" onClick={toggleUserMenu}>
+            <div className="user-avatar">
+              <i className="pi pi-user"></i>
+            </div>
+            <span className="user-name">{user?.username || 'User'}</span>
+            <i className="pi pi-chevron-down"></i>
+            
+            {userMenuOpen && (
+              <div className="user-dropdown-custom">
+                <button 
+                  className="dropdown-item"
+                  onClick={() => {
+                    navigate('/profile');
+                    setUserMenuOpen(false);
+                  }}
+                >
+                  <i className="pi pi-user"></i>
+                  Profile
+                </button>
+                <button 
+                  className="dropdown-item"
+                  onClick={() => {
+                    navigate('/settings');
+                    setUserMenuOpen(false);
+                  }}
+                >
+                  <i className="pi pi-cog"></i>
+                  Settings
+                </button>
+                <hr className="dropdown-divider" />
+                <button className="dropdown-item logout" onClick={handleLogout}>
+                  <i className="pi pi-sign-out"></i>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* Desktop Layout */}
+      {!isMobile && (
+        <>
+
+          
+          {/* Left Pane - Conversations */}
+          <aside className="left">
+            <div className="left-content">
+              <MyChats fetchAgain={fetchAgain} />
+            </div>
+            
+
+          </aside>
+
+          {/* Center Pane - Chat */}
+          <main className="center">
+            <ChatPane 
+              fetchAgain={fetchAgain} 
+              setFetchAgain={setFetchAgain} 
+            />
+          </main>
+        </>
       )}
+
+      {/* Mobile Layout */}
+      {isMobile && (
+        <>
+  
+          
+
+          
+          {/* Show chat list by default on mobile */}
+          {mobileView === 'chatList' && (
+            <main className="mobile-full">
+              <MyChats fetchAgain={fetchAgain} onChatSelect={handleChatSelect} />
+            </main>
+          )}
+
+          {/* Show chat view when chat is selected */}
+          {mobileView === 'chatView' && selectedChat && (
+            <main className="mobile-full">
+              <ChatPane 
+                fetchAgain={fetchAgain} 
+                setFetchAgain={setFetchAgain} 
+              />
+            </main>
+          )}
+          
+          {/* Fallback - always show something on mobile */}
+          {mobileView !== 'chatList' && mobileView !== 'chatView' && (
+            <main className="mobile-full">
+              <MyChats fetchAgain={fetchAgain} onChatSelect={handleChatSelect} />
+            </main>
+          )}
+        </>
+      )}
+
+
+
+      {/* Chat Details Components */}
+      <ChatDetails 
+        isOpen={isDetailsOpen}
+        chatId={detailsForChatId || selectedChat?._id}
+        onClose={() => dispatch(closeChatDetails())}
+      />
     </div>
-  </div>
-);
-
-
-
+  );
 };
 
 export default Chatpage;

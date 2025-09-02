@@ -1,27 +1,20 @@
-import React, { useState, useRef } from 'react';
-import { InputText } from 'primereact/inputtext';
-import { Password } from 'primereact/password';
-import { Button } from 'primereact/button';
-import { Card } from 'primereact/card';
-import { Toast } from 'primereact/toast';
-
-import '../styles.css';
-import 'primeflex/primeflex.css';
+import React, { useState } from 'react';
 
 const SignupForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
-  const toast = useRef(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const register = async () => {
+  const register = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
     if (!username || !password || !email) {
-      toast.current.show({ 
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Please enter all fields',
-        life: 3000 
-      });
+      setError('Please enter all fields');
+      setLoading(false);
       return;
     }
 
@@ -29,54 +22,77 @@ const SignupForm = () => {
       const response = await fetch('http://localhost:5000/api/user/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, email }) // Include email in the request
+        body: JSON.stringify({ username, password, email })
       });
 
       if (response.ok) {
-        toast.current.show({ severity: 'success', summary: 'Success', detail: 'User registered successfully', life: 3000 });
+        setError('');
         setUsername('');
         setPassword('');
         setEmail('');
+        // Could show success message or redirect to login
       } else {
-        toast.current.show({ 
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to register user',
-          life: 3000 
-        });
+        const errorData = await response.json();
+        setError(errorData.message || 'Failed to register user');
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      toast.current.show({ 
-        severity: 'error',
-        summary: 'Error', 
-        detail: 'Registration failed',
-        life: 3000 
-      });
+      setError('Network error. Please try again.');
     }
+
+    setLoading(false);
   };
 
   return (
-    <div className="signup-card"> {/* Apply the signup-card styling */}
-      <Toast ref={toast} />
-      <Card className="p-card"> {/* Apply the card styling */}
-        <div className="p-fluid">
-          <div className="p-field">
-            <label htmlFor="username">Username</label>
-            <InputText id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
-          </div>
-          <div className="p-field">
-            <label htmlFor="email">Email</label>
-            <InputText id="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          </div>
-          <div className="p-field">
-            <label htmlFor="password">Password</label>
-            <Password id="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
-          <Button label="Register" className="p-button" onClick={register} /> {/* Apply the button styling */}
-        </div>
-      </Card>
-    </div>
+    <form onSubmit={register} className="auth-form">
+      {error && <div className="error-message">{error}</div>}
+      
+      <div className="form-group">
+        <label htmlFor="username" className="form-label">Username</label>
+        <input
+          id="username"
+          type="text"
+          className="form-input"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Enter your username"
+          required
+        />
+      </div>
+      
+      <div className="form-group">
+        <label htmlFor="email" className="form-label">Email</label>
+        <input
+          id="email"
+          type="email"
+          className="form-input"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter your email"
+          required
+        />
+      </div>
+      
+      <div className="form-group">
+        <label htmlFor="password" className="form-label">Password</label>
+        <input
+          id="password"
+          type="password"
+          className="form-input"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Enter your password"
+          required
+        />
+      </div>
+      
+      <button 
+        type="submit" 
+        className={`auth-button ${loading ? 'loading' : ''}`}
+        disabled={loading}
+      >
+        {loading ? 'Creating account...' : 'Create Account'}
+      </button>
+    </form>
   );
 };
 

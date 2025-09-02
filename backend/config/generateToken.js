@@ -1,11 +1,10 @@
-const jwt = require('jsonwebtoken')
+// backend/config/generateToken.js
+const jwt = require('jsonwebtoken');
 
-const generateToken = (user) => {
-    return jwt.sign({_id: user._id},process.env.JWT_SECRET, {
-        expiresIn:'30d'
-    });
-    
+module.exports = function generateToken(userId) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return jwt.sign({ _id: userId }, secret, { expiresIn: '30d' });
 };
-
-
-module.exports = generateToken

@@ -1,3 +1,5 @@
+// Redux store configuration with persistence
+// Combines chat, auth, and user reducers with localStorage persistence
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import chatReducer from './reducers/chatReducer';
 import authReducer from './reducers/authReducer';
@@ -20,7 +22,15 @@ const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 
 export const store = configureStore({
-  reducer: persistedReducer, 
+  reducer: persistedReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE', 'persist/REGISTER'],
+        ignoredActionsPaths: ['meta.arg', 'payload.timestamp'],
+        ignoredPaths: ['_persist'],
+      },
+    }).concat(),
 });
 
 export const persistor = persistStore(store);

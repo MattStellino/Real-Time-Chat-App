@@ -1,0 +1,105 @@
+/* Professional Messaging App Theme */
+:root {
+  /* Dark theme (default) - WhatsApp/Telegram inspired */
+  --bg: #0b141a;
+  --panel: #111b21;
+  --panel-2: #202c33;
+  --text: #e9edef;
+  --text-muted: #8696a0;
+  --brand: #00a884;
+  --brand-strong: #008069;
+  --accent: #25d366;
+  --danger: #f15c6d;
+  --border: #2a3942;
+  --ring: rgba(0,168,132,.35);
+
+  /* Message bubble colors */
+  --sent-bg: linear-gradient(135deg, #00a884 0%, #008069 100%);
+  --received-bg: #202c33;
+  --sent-text: #ffffff;
+  --received-text: #e9edef;
+
+  /* Layout */
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 18px;
+  --gap-1: .5rem;
+  --gap-2: .75rem;
+  --gap-3: 1rem;
+  --gap-4: 1.25rem;
+
+  /* Shadows */
+  --shadow-1: 0 1px 3px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.2);
+  --shadow-2: 0 2px 8px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+  --shadow-bubble: 0 1px 2px rgba(0,0,0,.2);
+}
+
+.theme-light {
+  --bg: #ffffff;
+  --panel: #f0f2f5;
+  --panel-2: #e4e6ea;
+  --text: #1c1e21;
+  --text-muted: #65676b;
+  --brand: #00a884;
+  --brand-strong: #008069;
+  --accent: #25d366;
+  --danger: #f15c6d;
+  --border: #dadde1;
+  --ring: rgba(0,168,132,.35);
+
+  /* Message bubble colors for light theme */
+  --sent-bg: linear-gradient(135deg, #00a884 0%, #008069 100%);
+  --received-bg: #ffffff;
+  --sent-text: #ffffff;
+  --received-text: #1c1e21;
+
+  --shadow-1: 0 1px 3px rgba(0,0,0,.1), 0 4px 12px rgba(0,0,0,.05);
+  --shadow-2: 0 2px 8px rgba(0,0,0,.15), 0 8px 24px rgba(0,0,0,.1);
+  --shadow-bubble: 0 1px 2px rgba(0,0,0,.1);
+}
+
+/* Global styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--panel-2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

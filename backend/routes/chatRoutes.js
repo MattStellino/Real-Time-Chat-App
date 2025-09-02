@@ -1,3 +1,5 @@
+// Chat management routes for creating and managing conversations
+// Handles 1:1 chats, group chats, and chat operations
 const express = require('express');
 const authenticateUser =  require('../middleware/auth');
 const asyncHandler = require('express-async-handler');
@@ -6,11 +8,11 @@ const User = require('../models/userModel')
 const Chat = require("../models/chatModel");
 
 
+// Creates or retrieves existing 1:1 chat with specified user
 const accessChat = asyncHandler(async (req, res) => {
   const { userId } = req.body;
 
   if (!userId) {
-    console.log("UserId param not sent with request");
     return res.sendStatus(400);
   }
 
@@ -63,7 +65,18 @@ const fetchChats = asyncHandler(async (req, res) => {
                     path: 'latestMessage.sender',
                     select: "username email",
                 });
-                res.status(200).send(populatedResults);
+                
+                // Add unread count for each chat
+                const chatsWithUnreadCounts = populatedResults.map(chat => {
+                    const chatObj = chat.toObject();
+                    const userUnreadCount = chat.unreadCounts?.find(
+                        uc => uc.user.toString() === req.user._id.toString()
+                    );
+                    chatObj.unreadCount = userUnreadCount ? userUnreadCount.count : 0;
+                    return chatObj;
+                });
+                
+                res.status(200).send(chatsWithUnreadCounts);
             });
     } catch (error) {
         res.status(400);
@@ -73,7 +86,6 @@ const fetchChats = asyncHandler(async (req, res) => {
 
 
 const createGroup = asyncHandler(async (req, res) => {
-  console.log("createGroup called with body: ", req.body); 
 
   if (!req.body.users || !req.body.name) {
     console.warn("Missing fields in request body"); 
@@ -82,30 +94,32 @@ const createGroup = asyncHandler(async (req, res) => {
 
   var users = req.body.users;
 
-
   if (users.length < 2) {
-
     return res
       .status(400)
       .send("More than 2 users are required to create a group chat");
   }
 
-  users.push(req.user);
-  
+  users.push(req.user._id);
 
   try {
     const groupChat = await Chat.create({
       chatName: req.body.name,
       users: users,
       isGroupChat: true,
-      groupAdmin: req.user,
+      groupAdmin: req.user._id,
     });
   
+    
+    
     const fullGroupChat = await Chat.findOne({ _id: groupChat._id })
       .populate("users", "-password")
       .populate("groupAdmin", "-password");
+    
+    
     res.status(200).json(fullGroupChat);
   } catch (error) {
+    console.error("Error creating group chat: ", error);
     res.status(500).send({ message: error.message });
   }
 });
@@ -184,10 +198,95 @@ const removeFromGroup = asyncHandler(async (req, res) => {
   }
 });
 
+const updateGroupTitle = asyncHandler(async (req, res) => {
+  const { chatId } = req.params;
+  const { chatName } = req.body;
+
+  if (!chatName || chatName.trim().length === 0) {
+    res.status(400);
+    throw new Error("Chat name cannot be empty");
+  }
+
+  // Check if user is part of the group chat
+  const chat = await Chat.findById(chatId);
+  if (!chat) {
+    res.status(404);
+    throw new Error("Chat Not Found");
+  }
+
+  if (!chat.users.includes(req.user._id)) {
+    res.status(403);
+    throw new Error("You are not a member of this group chat");
+  }
+
+  const updatedChat = await Chat.findByIdAndUpdate(
+    chatId,
+    {
+      chatName: chatName.trim(),
+    },
+    {
+      new: true,
+    }
+  )
+    .populate("users", "-password")
+    .populate("groupAdmin", "-password");
+
+  if (!updatedChat) {
+    res.status(404);
+    throw new Error("Chat Not Found");
+  } else {
+    res.json(updatedChat);
+  }
+});
+
+const leaveGroup = asyncHandler(async (req, res) => {
+  const { chatId } = req.params;
+
+  // Check if chat exists and is a group chat
+  const chat = await Chat.findById(chatId);
+  if (!chat) {
+    res.status(404);
+    throw new Error("Chat Not Found");
+  }
+
+  if (!chat.isGroupChat) {
+    res.status(400);
+    throw new Error("This is not a group chat");
+  }
+
+  // Check if user is part of the group chat
+  if (!chat.users.includes(req.user._id)) {
+    res.status(403);
+    throw new Error("You are not a member of this group chat");
+  }
+
+  // Remove user from the group
+  const updatedChat = await Chat.findByIdAndUpdate(
+    chatId,
+    {
+      $pull: { users: req.user._id },
+    },
+    {
+      new: true,
+    }
+  )
+    .populate("users", "-password")
+    .populate("groupAdmin", "-password");
+
+  if (!updatedChat) {
+    res.status(404);
+    throw new Error("Chat Not Found");
+  } else {
+    res.json(updatedChat);
+  }
+});
+
 router.route('/').post(authenticateUser, accessChat);
 router.route('/').get(authenticateUser, fetchChats);
 router.route('/group').post(authenticateUser, createGroup);
 router.route('/rename').patch(authenticateUser, renameGroup);
 router.route('/groupleave').patch(authenticateUser, removeFromGroup);
 router.route('/groupadd').patch(authenticateUser, addToGroup);
+router.route('/:chatId/title').patch(authenticateUser, updateGroupTitle);
+router.route('/:chatId/leave').patch(authenticateUser, leaveGroup);
 module.exports = router;

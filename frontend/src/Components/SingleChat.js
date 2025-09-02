@@ -1,25 +1,60 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import {Card} from 'primereact/card';
-import {Button} from 'primereact/button';
-import {Toast} from 'primereact/toast';
-import { Panel } from 'primereact/panel'
-import {InputText} from 'primereact/inputtext';
-import {ProgressSpinner} from 'primereact/progressspinner';
-
-import { setSelectedChat } from '../actions/chatActions';
-import UpdateGroupChatModal from './misc/UpdateGroupChat';
+// Single chat view component for displaying messages in a conversation
+// Handles message fetching and scroll position management
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import ScrollChat from './ScrollChat';
-import { getSender, getSenderFull } from '../config/ChatLogics';
-import '../styles.css';
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [newMessage, setNewMessage] = useState('');
-  const { user, selectedChat } = useSelector((state) => state.chat);
-  const dispatch = useDispatch();
-  const toast = useRef(null);
+  // Removed all scroll tracking - no auto scroll functionality
+  const { selectedChat } = useSelector((state) => state.chat);
+  const { user } = useSelector((state) => state.user);
+  
+
+
+  // ALL SCROLL FUNCTIONALITY REMOVED - NO AUTO SCROLL
+  
+  // Smart scroll position lock - only lock if not at bottom
+  useEffect(() => {
+    const messagesContainer = document.querySelector('.chat-pane__messages');
+    if (messagesContainer) {
+      let lockedScrollTop = messagesContainer.scrollTop;
+      const SCROLL_EPS = 24; // px tolerance for "near bottom"
+      
+      const isNearBottom = () => {
+        return messagesContainer.scrollTop + messagesContainer.clientHeight >= messagesContainer.scrollHeight - SCROLL_EPS;
+      };
+      
+      const lockScrollPosition = () => {
+        // Only lock position if user is NOT at the bottom
+        if (!isNearBottom()) {
+          messagesContainer.scrollTop = lockedScrollTop;
+        }
+        // If user is at bottom, let it scroll naturally to show new message
+      };
+      
+      // Lock scroll position on any content change
+      const observer = new MutationObserver(lockScrollPosition);
+      observer.observe(messagesContainer, { 
+        childList: true, 
+        subtree: true, 
+        attributes: true 
+      });
+      
+      // Update locked position when user manually scrolls
+      const updateLockPosition = () => {
+        lockedScrollTop = messagesContainer.scrollTop;
+      };
+      
+      messagesContainer.addEventListener('scroll', updateLockPosition, { passive: true });
+      
+      return () => {
+        observer.disconnect();
+        messagesContainer.removeEventListener('scroll', updateLockPosition);
+      };
+    }
+  }, []);
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
@@ -36,13 +71,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       const data = await response.json();
       setMessages(data);
     } catch (error) {
-      toast.current.show({
-        severity: 'error',
-        summary: 'Error Occurred!',
-        detail: error.message,
-        life: 5000,
-        position: 'bottom',
-      });
+      console.error('Fetch messages error:', error);
     } finally {
       setLoading(false);
     }
@@ -50,105 +79,26 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   useEffect(() => {
     fetchMessages();
-  }, [selectedChat]);
+  }, [selectedChat, fetchAgain]);
 
-  const sendMessage = async (event) => {
-    if (event.key === 'Enter' && newMessage) {
-      try {
-        setNewMessage('');
-        const response = await fetch('http://localhost:5000/api/message', {
-          method: 'POST',
-          headers: {
-            'Content-type': 'application/json',
-            Authorization: `Bearer ${user.token}`,
-          },
-          body: JSON.stringify({ content: newMessage, chatId: selectedChat }),
-        });
 
-        if (!response.ok) throw new Error('Failed to send the Message');
-
-        const data = await response.json();
-        setMessages((prevMessages) => [...prevMessages, data]);
-      } catch (error) {
-        toast.current.show({
-          severity: 'error',
-          summary: 'Error Occurred!',
-          detail: error.message,
-          life: 5000,
-          position: 'bottom',
-        });
-      }
-    }
-  };
-
-  const typingHandler = (e) => setNewMessage(e.target.value);
 
   if (!selectedChat) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          fontSize: '25px' 
-        }}
-      >
-        <p>Please Select a chat to start</p>
-      </div>
-    );
+    return null;
   }
 
-return (
-    <div >
-        <div className="chat-header" >
-            <Button
-                icon="pi pi-arrow-left"
-                className="back-button"
-                onClick={() => dispatch(setSelectedChat(null))}
-                style={{ 
-                backgroundColor: 'mediumseagreen',
-                border: '1px solid mediumseagreen',
-                color: 'black'
-              }}
-            />
-            {!selectedChat.isGroupChat ? (
-                <div className='chat-user'>
-                    {getSender(user, selectedChat.users)}
-                </div>
-            ) : (
-                <div>
-                    {selectedChat.chatName.toUpperCase()}
-                    <UpdateGroupChatModal
-                        fetchAgain={fetchAgain}
-                        setFetchAgain={setFetchAgain}
-                        fetchMessages={fetchMessages}
-                    />
-                </div>
-            )}
+  return (
+    <>
+      {loading ? (
+        <div className="loading-spinner">
+          <i className="pi pi-spin pi-spinner"></i>
         </div>
-
-        <div className="single-chat-container" >
-            <Toast ref={toast} />
-            <div className="chat-messages-container">
-                {loading ? (
-                <ProgressSpinner className="loading-spinner" />
-                ) : (
-                <div className="messages">
-                    <ScrollChat messages={messages} />
-                </div>
-                )}
-                <div className="message-input" onKeyDown={sendMessage}>
-                <InputText
-                    className="input-text"
-                    placeholder="Enter a message..."
-                    value={newMessage}
-                    onChange={typingHandler}
-                />
-                </div>
-            </div>
-        </div>
-    </div>
+      ) : (
+        <>
+          <ScrollChat messages={messages} />
+        </>
+      )}
+    </>
   );
 };
 

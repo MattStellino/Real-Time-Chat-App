@@ -1,41 +1,43 @@
+// backend/middleware/auth.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel.js');
 const asyncHandler = require('express-async-handler');
 
-// Middleware to check for authentication
 const authenticateUser = asyncHandler(async (req, res, next) => {
-    let token;
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
 
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        // Extract the token from the Authorization header
-        token = req.headers.authorization.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized - No token provided' });
+  }
+
+  try {
+    const secret = process.env.JWT_SECRET || 'mysupersecretkey123456789abcdefghijklmnopqrstuvwxyz';
+    const decoded = jwt.verify(token, secret);
+
+    // Accept multiple payload shapes
+    const userId = decoded._id || decoded.id || decoded.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized - Invalid token payload' });
     }
 
-    if (!token) {
-        // If no token is provided, return an unauthorized response
-        res.status(401).json({ message: 'Unauthorized - No token provided' });
-        return;
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthorized - User not found' });
     }
-     console.log('JWT Token:', token);
-    try {
-        // Verify the token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        // Assuming the token payload contains the user's ID as 'id'
-        req.user = await User.findById(decoded._id);
-
-        if (!req.user) {
-            res.status(401).json({ message: 'Unauthorized - User not found' });
-            return;
-        }
-
-        next(); // Proceed to the next middleware or route handler
-    } catch (error) {
-        console.error(error);
-        // If the token is invalid or expired, return an unauthorized response
-        res.status(401).json({ message: 'Unauthorized - Token verification failed' });
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Auth error:', error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Unauthorized - Invalid token format' });
+    } else if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Unauthorized - Token expired' });
+    } else {
+      return res.status(401).json({ message: 'Unauthorized - Token verification failed' });
     }
-    console.log('JWT Token:', token);
+  }
 });
 
 module.exports = authenticateUser;

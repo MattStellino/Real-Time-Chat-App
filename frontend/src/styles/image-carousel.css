@@ -1,0 +1,234 @@
+/* Image Carousel Styles */
+.image-carousel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
+}
+
+.image-carousel-container {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Close button */
+.image-carousel-close {
+  position: absolute;
+  top: -3rem;
+  right: 0;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: none !important;
+  color: white !important;
+  z-index: 10001;
+  transition: all 0.2s ease !important;
+}
+
+.image-carousel-close:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.1);
+}
+
+/* Navigation buttons */
+.image-carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: none !important;
+  color: white !important;
+  z-index: 10001;
+  transition: all 0.2s ease !important;
+  backdrop-filter: blur(10px);
+}
+
+.image-carousel-nav:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.image-carousel-prev {
+  left: -2rem;
+}
+
+.image-carousel-next {
+  right: -2rem;
+}
+
+/* Main image container */
+.image-carousel-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.image-carousel-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 0.5rem;
+  transition: transform 0.3s ease;
+}
+
+.image-carousel-image:hover {
+  transform: scale(1.02);
+}
+
+/* Image counter */
+.image-carousel-counter {
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+  backdrop-filter: blur(10px);
+}
+
+/* Thumbnail strip */
+.image-carousel-thumbnails {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 1rem;
+  backdrop-filter: blur(10px);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.image-carousel-thumbnails::-webkit-scrollbar {
+  height: 6px;
+}
+
+.image-carousel-thumbnails::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.image-carousel-thumbnails::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.image-carousel-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  opacity: 0.6;
+}
+
+.image-carousel-thumbnail:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+.image-carousel-thumbnail.active {
+  opacity: 1;
+  border-color: var(--brand);
+  transform: scale(1.1);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .image-carousel-overlay {
+    padding: 1rem;
+  }
+  
+  .image-carousel-container {
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+  
+  .image-carousel-close {
+    top: -2.5rem;
+    width: 35px !important;
+    height: 35px !important;
+  }
+  
+  .image-carousel-nav {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  
+  .image-carousel-prev {
+    left: -1.5rem;
+  }
+  
+  .image-carousel-next {
+    right: -1.5rem;
+  }
+  
+  .image-carousel-main {
+    max-height: 60vh;
+  }
+  
+  .image-carousel-thumbnail {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .image-carousel-thumbnails {
+    gap: 0.25rem;
+    padding: 0.25rem;
+  }
+}
+
+/* Animation for opening */
+@keyframes carouselFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.image-carousel-container {
+  animation: carouselFadeIn 0.3s ease-out;
+}
+
+/* Loading state */
+.image-carousel-image[src=""] {
+  background: var(--surface-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.image-carousel-image[src=""]::before {
+  content: "Loading...";
+  color: var(--text-muted);
+  font-size: 1rem;
+}

@@ -1,28 +1,22 @@
 import React from 'react';
-import { Avatar } from 'primereact/avatar'; // PrimeReact Avatar component
-import 'primeflex/primeflex.css'; // PrimeFlex for styling
 
 const UserListItem = ({ user, handleFunction }) => {
   return (
     <div
       onClick={handleFunction}
-      className="p-d-flex p-ai-center p-mb-2"
-      style={{ 
-        cursor: 'pointer',
-        padding: '20px',
-        border: '1px solid black' }}
+      className="conv-item"
+      style={{ cursor: 'pointer' }}
     >
-      <Avatar 
-        label={user.username} 
-        className="p-mr-2" 
-        size="small" 
-        style={{
-          cursor: 'pointer',
-          backgroundColor: 'white', 
-          padding: '20px' }}
-      />
-      <div>
-        <span className="p-text-bold">{user.email}</span>
+      <div className="conv-avatar">
+        {user.username.charAt(0).toUpperCase()}
+      </div>
+      <div className="conv-info">
+        <div className="conv-name">
+          {user.username}
+        </div>
+        <div className="conv-preview">
+          {user.email}
+        </div>
       </div>
     </div>
   );
