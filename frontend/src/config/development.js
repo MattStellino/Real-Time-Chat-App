@@ -1,7 +1,7 @@
 // Development Configuration
 export const DEVELOPMENT_CONFIG = {
-  API_URL: 'http://localhost:5000',
-  SOCKET_URL: 'http://localhost:5000',
+  API_URL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
+  SOCKET_URL: process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000',
   ENVIRONMENT: 'development',
   VERSION: '1.0.0-dev',
   BUILD_DATE: new Date().toISOString().split('T')[0],
