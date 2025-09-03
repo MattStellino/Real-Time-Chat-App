@@ -78,7 +78,8 @@ const app = express();
 app.use(cors({
   origin: [
     "https://live-chat-app-swart.vercel.app",
-    "https://live-chat-ldpdwrg9y-mattstellinos-projects.vercel.app"
+    "https://live-chat-ldpdwrg9y-mattstellinos-projects.vercel.app",
+    "https://live-chat-clnalfdz9-mattstellinos-projects.vercel.app"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   credentials: true,
