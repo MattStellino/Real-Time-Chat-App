@@ -64,7 +64,11 @@ connectDB();
 const app = express();
 // Secure CORS configuration
 const allowedOrigins = process.env.NODE_ENV === 'production' 
-  ? [process.env.FRONTEND_URL, 'https://live-chat-6qzymnh7z-mattstellinos-projects.vercel.app'].filter(Boolean)
+  ? [
+      process.env.FRONTEND_URL,
+      'https://live-chat-app-swart.vercel.app',
+      'https://livechatapp.com'
+    ].filter(Boolean)
   : ["http://localhost:3000", "http://localhost:3001"];
 
 app.use(cors({
@@ -83,6 +87,9 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 }));
+
+// Handle preflight OPTIONS requests properly
+app.options('*', cors());
 
 app.use(express.json());
 
