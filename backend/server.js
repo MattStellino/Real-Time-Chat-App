@@ -9,14 +9,26 @@ const chatRoutes = require('./routes/chatRoutes')
 const passport = require('./config/passportConfig'); 
 const bodyParser = require('body-parser');
 const session = require('express-session'); 
+const MongoStore = require('connect-mongo');
 const { notFound, errorHandler } = require('./middleware/error')
 const cors = require('cors');
 dotenv.config();
 
 // Check required environment variables
 const jwtSecret = process.env.JWT_SECRET;
+const sessionSecret = process.env.SESSION_SECRET;
+const mongoUri = process.env.MONGO_URI;
+
 if (!jwtSecret) {
   throw new Error('JWT_SECRET environment variable is required');
+}
+
+if (!sessionSecret) {
+  throw new Error('SESSION_SECRET environment variable is required');
+}
+
+if (!mongoUri) {
+  throw new Error('MONGO_URI environment variable is required');
 }
 
 // Simple in-memory rate limiting (basic protection)
@@ -62,30 +74,15 @@ setInterval(() => {
 connectDB();
 
 const app = express();
-// Secure CORS configuration
-const allowedOrigins = process.env.NODE_ENV === 'production' 
-  ? [
-      process.env.FRONTEND_URL,
-      'https://live-chat-app-swart.vercel.app',
-      'https://livechatapp.com'
-    ].filter(Boolean)
-  : ["http://localhost:3000", "http://localhost:3001"];
-
+// Secure CORS configuration - Allow your Vercel frontend domains
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin, 'Allowed origins:', allowedOrigins);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: [
+    "https://live-chat-app-swart.vercel.app",
+    "https://live-chat-ldpdwrg9y-mattstellinos-projects.vercel.app"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"],
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 // Handle preflight OPTIONS requests properly
@@ -97,9 +94,18 @@ app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
 app.use(session({
-  secret: jwtSecret,
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
+  store: MongoStore.create({ 
+    mongoUrl: mongoUri,
+    collectionName: 'sessions'
+  }),
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production', 
+    httpOnly: true, 
+    maxAge: 1000 * 60 * 60 * 24 // 24 hours
+  }
 }));
 
 app.use(passport.initialize());
@@ -125,7 +131,7 @@ app.use(notFound)
 app.use(errorHandler)
 
 const PORT = process.env.PORT || 5000
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   // Server startup logging (production safe)
   if (process.env.NODE_ENV !== 'production') {
     console.log(`🚀 Server is running on PORT ${PORT}`);

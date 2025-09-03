@@ -1,7 +1,7 @@
 // Production Configuration
 export const PRODUCTION_CONFIG = {
-  API_URL: process.env.REACT_APP_API_URL || 'https://your-backend-url.vercel.app',
-  SOCKET_URL: process.env.REACT_APP_SOCKET_URL || 'https://your-backend-url.vercel.app',
+  API_URL: process.env.REACT_APP_API_URL || 'https://real-time-chat-app-sq69.onrender.com',
+  SOCKET_URL: process.env.REACT_APP_SOCKET_URL || 'https://real-time-chat-app-sq69.onrender.com',
   ENVIRONMENT: 'production',
   VERSION: '1.0.0',
   BUILD_DATE: '2025-01-02',

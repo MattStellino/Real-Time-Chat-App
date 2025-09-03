@@ -1,0 +1,38 @@
+#!/bin/bash
+
+echo "🚀 Chat App Backend Deployment Script for Render"
+echo "=================================================="
+
+echo ""
+echo "📋 Prerequisites:"
+echo "1. Make sure you have a MongoDB database (MongoDB Atlas recommended)"
+echo "2. Your code is pushed to GitHub"
+echo "3. You have a Render account"
+echo ""
+
+echo "🔧 Environment Variables to set in Render:"
+echo "-------------------------------------------"
+echo "MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database_name"
+echo "JWT_SECRET=your_super_secret_jwt_key_here"
+echo "FRONTEND_URL=https://your-frontend-domain.com"
+echo "NODE_ENV=production"
+echo ""
+
+echo "📝 Deployment Steps:"
+echo "---------------------"
+echo "1. Go to render.com and sign in"
+echo "2. Click 'New +' and select 'Web Service'"
+echo "3. Connect your GitHub repository"
+echo "4. Configure the service:"
+echo "   - Name: chatapp-backend"
+echo "   - Environment: Node"
+echo "   - Build Command: npm install"
+echo "   - Start Command: npm start"
+echo "   - Root Directory: backend (if deploying from root repo)"
+echo "5. Add the environment variables listed above"
+echo "6. Click 'Create Web Service'"
+echo ""
+
+echo "✅ Your backend will be available at: https://your-service-name.onrender.com"
+echo ""
+echo "🔗 Update your frontend to use the new backend URL!"
