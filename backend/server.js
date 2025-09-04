@@ -51,8 +51,10 @@ const simpleRateLimit = (maxRequests = 100, windowMs = 15 * 60 * 1000) => {
       }
       
       if (userData.count > maxRequests) {
+        console.log(`Rate limit exceeded for IP ${ip}: ${userData.count}/${maxRequests} requests`);
         return res.status(429).json({ 
-          error: 'Too many requests, please try again later.' 
+          error: 'Too many requests, please try again later.',
+          retryAfter: Math.ceil((userData.resetTime - now) / 1000)
         });
       }
     }
@@ -74,13 +76,17 @@ setInterval(() => {
 connectDB();
 
 const app = express();
-// Secure CORS configuration - Allow your Vercel frontend domains
+// Secure CORS configuration - Allow your Vercel frontend domains and local development
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? [
+      "https://live-chat-app-swart.vercel.app",
+      "https://live-chat-ldpdwrg9y-mattstellinos-projects.vercel.app",
+      "https://live-chat-clnalfdz9-mattstellinos-projects.vercel.app"
+    ]
+  : ["http://localhost:3000", "http://localhost:3001"];
+
 app.use(cors({
-  origin: [
-    "https://live-chat-app-swart.vercel.app",
-    "https://live-chat-ldpdwrg9y-mattstellinos-projects.vercel.app",
-    "https://live-chat-clnalfdz9-mattstellinos-projects.vercel.app"
-  ],
+  origin: allowedOrigins,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"]
@@ -118,9 +124,10 @@ app.get('/', (req, res) => {
     res.send('Api is running')
 });
 
-// Apply rate limiting
-app.use('/api/user', simpleRateLimit(100, 15 * 60 * 1000)); // 100 requests per 15 minutes
-app.use('/api/message', simpleRateLimit(30, 60 * 1000)); // 30 requests per minute
+// Apply rate limiting - More generous for chat app
+app.use('/api/user', simpleRateLimit(1000, 15 * 60 * 1000)); // 1000 requests per 15 minutes
+app.use('/api/message', simpleRateLimit(500, 60 * 1000)); // 500 requests per minute
+app.use('/api/chat', simpleRateLimit(500, 60 * 1000)); // 500 requests per minute
 
 // API route mounting
 app.use('/api/user', userRoutes)

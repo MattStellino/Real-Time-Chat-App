@@ -177,30 +177,57 @@ export const searchMessages = (messages, query) => {
  * @returns {Blob} JSON blob
  */
 export const exportAsJson = (chat, messages, participants = []) => {
+  console.log('Exporting JSON:', { 
+    chat: chat ? { id: chat._id, name: chat.chatName || chat.displayName } : 'No chat', 
+    messagesCount: messages ? messages.length : 0, 
+    participantsCount: participants ? participants.length : 0 
+  });
+  
+  // Validate inputs
+  if (!chat) {
+    console.error('No chat provided for export');
+    return new Blob(['{"error": "No chat data provided"}'], { type: 'application/json' });
+  }
+  
+  if (!messages || !Array.isArray(messages)) {
+    console.error('Invalid messages array:', messages);
+    messages = [];
+  }
+  
+  if (!participants || !Array.isArray(participants)) {
+    console.error('Invalid participants array:', participants);
+    participants = [];
+  }
+  
   const exportData = {
     chat: {
-      id: chat._id,
-      name: chat.chatName || chat.displayName,
-      isGroupChat: chat.isGroupChat,
-      createdAt: chat.createdAt,
-      updatedAt: chat.updatedAt
+      id: chat._id || 'unknown',
+      name: chat.chatName || chat.displayName || 'Unknown Chat',
+      isGroupChat: chat.isGroupChat || false,
+      createdAt: chat.createdAt || new Date().toISOString(),
+      updatedAt: chat.updatedAt || new Date().toISOString()
     },
     participants: participants.map(p => ({
-      id: p._id,
-      username: p.username,
-      email: p.email
+      id: p._id || 'unknown',
+      username: p.username || 'Unknown User',
+      email: p.email || 'No email'
     })),
     messages: messages.map(m => ({
-      id: m._id,
-      content: m.content,
-      sender: m.sender,
-      createdAt: m.createdAt,
+      id: m._id || 'unknown',
+      content: m.content || '[No content]',
+      sender: m.sender || { username: 'Unknown' },
+      createdAt: m.createdAt || new Date().toISOString(),
       attachments: m.attachments || []
     })),
     exportedAt: new Date().toISOString(),
-    totalMessages: messages.length
+    totalMessages: messages.length,
+    exportInfo: {
+      format: 'json',
+      version: '1.0'
+    }
   };
 
+  console.log('Export data prepared:', exportData);
   return new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
 };
 
@@ -212,18 +239,21 @@ export const exportAsJson = (chat, messages, participants = []) => {
  * @returns {Blob} TXT blob
  */
 export const exportAsTxt = (chat, messages, participants = []) => {
+  console.log('Exporting TXT:', { chat, messagesCount: messages.length, participantsCount: participants.length });
+  
   const chatName = chat.chatName || chat.displayName || 'Unknown Chat';
-  const isGroup = chat.isGroupChat;
+  const isGroup = chat.isGroupChat || false;
   
   let content = `Chat Export: ${chatName}\n`;
   content += `Type: ${isGroup ? 'Group Chat' : 'Direct Message'}\n`;
   content += `Created: ${formatDate(chat.createdAt)}\n`;
-  content += `Total Messages: ${messages.length}\n\n`;
+  content += `Total Messages: ${messages.length}\n`;
+  content += `Exported: ${new Date().toLocaleString()}\n\n`;
   
   if (isGroup && participants.length > 0) {
     content += `Participants:\n`;
     participants.forEach(p => {
-      content += `- ${p.username} (${p.email})\n`;
+      content += `- ${p.username || 'Unknown'} (${p.email || 'No email'})\n`;
     });
     content += `\n`;
   }
@@ -231,21 +261,28 @@ export const exportAsTxt = (chat, messages, participants = []) => {
   content += `Messages:\n`;
   content += `${'='.repeat(50)}\n\n`;
   
-  messages.forEach((message) => {
-    const timestamp = formatDate(message.timestamp || message.createdAt);
-    const sender = message.sender?.username || 'Unknown';
-    const messageContent = message.content || '[No text content]';
-    
-    content += `${timestamp} | ${sender}: ${messageContent}\n`;
-    
-    if (message.attachments && message.attachments.length > 0) {
-      message.attachments.forEach(attachment => {
-        content += `  📎 ${attachment.name || 'Attachment'}\n`;
-      });
-    }
-    
-    content += `\n`;
-  });
+  if (messages.length === 0) {
+    content += `No messages available for export.\n`;
+  } else {
+    messages.forEach((message, index) => {
+      const timestamp = formatDate(message.timestamp || message.createdAt);
+      const sender = message.sender?.username || message.sender || 'Unknown';
+      const messageContent = message.content || '[No text content]';
+      
+      content += `${index + 1}. ${timestamp} | ${sender}: ${messageContent}\n`;
+      
+      if (message.attachments && message.attachments.length > 0) {
+        message.attachments.forEach(attachment => {
+          content += `  📎 ${attachment.name || attachment.filename || 'Attachment'}\n`;
+        });
+      }
+      
+      content += `\n`;
+    });
+  }
+  
+  content += `\nEnd of Export\n`;
+  console.log('TXT content prepared, length:', content.length);
   
   return new Blob([content], { type: 'text/plain' });
 };
@@ -289,14 +326,33 @@ export const formatFileSize = (bytes) => {
  * @param {string} filename - Filename for download
  */
 export const downloadBlob = (blob, filename) => {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  try {
+    console.log('Downloading blob:', { blob, filename, blobSize: blob.size });
+    
+    if (!blob || blob.size === 0) {
+      console.error('Blob is empty or invalid');
+      return;
+    }
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up the URL after a short delay
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 100);
+    
+    console.log('Download initiated successfully');
+  } catch (error) {
+    console.error('Error downloading blob:', error);
+  }
 };
 
 /**

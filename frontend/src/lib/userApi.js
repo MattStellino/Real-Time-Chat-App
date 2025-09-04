@@ -1,7 +1,8 @@
 // User API client for profile and settings management
 // Handles authenticated requests to user endpoints
+import { CONFIG } from '../config';
 
-const API_BASE = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/user`;
+const API_BASE = `${CONFIG.API_URL}/api/user`;
 
 /**
  * Get current user profile

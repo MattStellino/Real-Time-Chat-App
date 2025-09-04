@@ -162,9 +162,10 @@ export const setPendingAction = (action) => ({
   payload: action,
 });
 
-export const exportChat = (chatId, format) => (dispatch, getState) => {
+export const exportChat = (chatId, format, messages = []) => async (dispatch, getState) => {
   dispatch(setPendingAction('export'));
-  const { chats, messages } = getState().chat;
+  const { chats } = getState().chat;
+  const { token } = getState().auth;
   const chat = chats.find(c => c._id === chatId);
   
   if (!chat) {
@@ -173,10 +174,57 @@ export const exportChat = (chatId, format) => (dispatch, getState) => {
     return;
   }
 
-  // Import the export utilities
-  import('../lib/chatUtils').then(({ exportAsJson, exportAsTxt, downloadBlob, generateExportFilename }) => {
-    const chatMessages = messages.filter(m => m.chat === chatId);
+  try {
+    // Import the export utilities
+    const { exportAsJson, exportAsTxt, downloadBlob, generateExportFilename } = await import('../lib/chatUtils');
+    
+    console.log('Exporting chat:', { chatId, format, messagesCount: messages.length });
+    
+    // Use the messages passed from the component, or fetch them from API
+    let chatMessages = messages;
+    
+    // If no messages were passed, fetch them from the API
+    if (!chatMessages || chatMessages.length === 0) {
+      console.log('No messages passed, fetching from API...');
+      
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/message/${chatId}`, {
+          method: 'GET',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          chatMessages = await response.json();
+          console.log(`Fetched ${chatMessages.length} messages from API for export`);
+        } else {
+          console.error('Failed to fetch messages for export:', response.status);
+          chatMessages = [];
+        }
+      } catch (fetchError) {
+        console.error('Error fetching messages for export:', fetchError);
+        chatMessages = [];
+      }
+    }
+    
+    console.log(`Total messages for export: ${chatMessages.length}`);
+    
     const participants = chat.users || [];
+    
+    // Ensure we have some data to export
+    if (chatMessages.length === 0) {
+      console.warn('No messages found for export, creating empty export');
+      // Create a minimal export with just chat info
+      chatMessages = [{
+        _id: 'no-messages',
+        content: 'No messages available for export',
+        sender: { username: 'System' },
+        createdAt: new Date().toISOString(),
+        attachments: []
+      }];
+    }
     
     let blob;
     if (format === 'json') {
@@ -185,13 +233,23 @@ export const exportChat = (chatId, format) => (dispatch, getState) => {
       blob = exportAsTxt(chat, chatMessages, participants);
     }
     
+    // Debug: Log the blob details
+    console.log('Export blob created:', { 
+      blob, 
+      size: blob.size, 
+      type: blob.type,
+      chatMessagesCount: chatMessages.length 
+    });
+    
     const filename = generateExportFilename(chat, format);
+    console.log('Export filename:', filename);
+    
     downloadBlob(blob, filename);
     dispatch(setPendingAction(null));
-  }).catch(error => {
+  } catch (error) {
     console.error('Export failed:', error);
     dispatch(setPendingAction(null));
-  });
+  }
 };
 
 // Read Receipt Actions

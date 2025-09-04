@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import ScrollChat from './ScrollChat';
+import { CONFIG } from '../config';
 
 const AUTO_SCROLL_ON_SEND = false; // Kill-switch flag
 
@@ -32,7 +33,7 @@ const MessageList = ({ fetchAgain, setFetchAgain }) => {
       setLoading(true);
   
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/message/${selectedChat._id}`, {
+      const response = await fetch(`${CONFIG.API_URL}/api/message/${selectedChat._id}`, {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -56,7 +57,12 @@ const MessageList = ({ fetchAgain, setFetchAgain }) => {
   };
 
   useEffect(() => {
-    fetchMessages();
+    // Add debouncing to prevent rapid API calls
+    const timer = setTimeout(() => {
+      fetchMessages();
+    }, 300);
+    
+    return () => clearTimeout(timer);
   }, [selectedChat, fetchAgain]);
 
   // Keep 'last' up to date when the user scrolls manually

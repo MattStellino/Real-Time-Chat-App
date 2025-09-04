@@ -34,9 +34,11 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--gap-4);
+  padding-right: var(--gap-6);
   border-bottom: 1px solid var(--border);
   background: var(--panel);
   position: relative;
+  min-height: 60px;
 }
 
 .header-content {
@@ -46,33 +48,41 @@
 
 .header-actions {
   position: absolute;
-  top: -8px;
-  left: 0;
+  top: 0;
+  right: 0;
   z-index: 10;
+  transform: translateX(0);
 }
 
-.back-button {
-  background: transparent !important;
-  border: none !important;
+.close-button {
+  background: var(--panel-2) !important;
+  border: 1px solid var(--border) !important;
   color: var(--text-muted) !important;
   padding: var(--gap-2) !important;
   border-radius: 50% !important;
   transition: all 0.18s ease !important;
-  width: 40px !important;
-  height: 40px !important;
+  width: 32px !important;
+  height: 32px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  margin: var(--gap-2) !important;
+  position: absolute !important;
+  right: var(--gap-2) !important;
+  top: var(--gap-2) !important;
+  transform: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
-.back-button:hover {
-  background: var(--panel-2) !important;
+.close-button:hover {
+  background: var(--panel) !important;
   color: var(--text) !important;
-  transform: translateX(-2px) !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
 }
 
-.back-button:active {
-  transform: translateX(0) !important;
+.close-button:active {
+  transform: scale(1) !important;
 }
 
 .chat-details-title {
@@ -95,24 +105,7 @@
   margin: 0;
 }
 
-.close-button {
-  background: transparent !important;
-  border: none !important;
-  color: var(--text-muted) !important;
-  padding: var(--gap-2) !important;
-  border-radius: 50% !important;
-  transition: all 0.18s ease !important;
-  width: 40px !important;
-  height: 40px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
 
-.close-button:hover {
-  background: var(--panel-2) !important;
-  color: var(--text) !important;
-}
 
 /* Content */
 .chat-details-content {
@@ -223,6 +216,70 @@
 .media-tabs .p-tabview-panels {
   background: var(--panel);
   padding: var(--gap-3);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Custom scrollbar for media tabs */
+.media-tabs .p-tabview-panels::-webkit-scrollbar {
+  width: 6px;
+}
+
+.media-tabs .p-tabview-panels::-webkit-scrollbar-track {
+  background: var(--panel-2);
+  border-radius: 3px;
+}
+
+.media-tabs .p-tabview-panels::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.media-tabs .p-tabview-panels::-webkit-scrollbar-thumb:hover {
+  background: var(--brand);
+}
+
+/* Custom scrollbar for media tabs */
+.media-tabs .p-tabview-panels::-webkit-scrollbar {
+  width: 6px;
+}
+
+.media-tabs .p-tabview-panels::-webkit-scrollbar-track {
+  background: var(--panel-2);
+  border-radius: 3px;
+}
+
+.media-tabs .p-tabview-panels::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.media-tabs .p-tabview-panels::-webkit-scrollbar-thumb:hover {
+  background: var(--brand);
+}
+
+/* Media Loading State */
+.media-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gap-6);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.media-loading i {
+  font-size: 2rem;
+  margin-bottom: var(--gap-3);
+  color: var(--brand);
+}
+
+.media-loading p {
+  margin: 0;
+  font-size: 0.875rem;
 }
 
 .empty-media-state {

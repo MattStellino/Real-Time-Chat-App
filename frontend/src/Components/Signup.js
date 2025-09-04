@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { CONFIG } from '../config';
 
 const SignupForm = () => {
   const [username, setUsername] = useState('');
@@ -19,7 +20,7 @@ const SignupForm = () => {
     }
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/user/register`, {
+      const response = await fetch(`${CONFIG.API_URL}/api/user/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password, email })
@@ -32,8 +33,9 @@ const SignupForm = () => {
         setEmail('');
         // Could show success message or redirect to login
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to register user');
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        console.error('Registration failed:', response.status, errorData);
+        setError(errorData.message || `Failed to register user (${response.status})`);
       }
     } catch (error) {
       setError('Network error. Please try again.');

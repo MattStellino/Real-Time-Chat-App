@@ -13,7 +13,15 @@ export const ACCEPTED_TYPES = new Set([
   // Videos
   "video/mp4",
   "video/webm",
-  "video/quicktime"
+  "video/quicktime",
+  // Documents
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  // Archives
+  "application/zip",
+  "application/x-rar-compressed"
 ]);
 
 // File type categories
@@ -31,6 +39,18 @@ export const VIDEO_TYPES = new Set([
   "video/quicktime"
 ]);
 
+export const DOCUMENT_TYPES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain"
+]);
+
+export const ARCHIVE_TYPES = new Set([
+  "application/zip",
+  "application/x-rar-compressed"
+]);
+
 // Validation function
 export function validateFile(file) {
   const maxSizeBytes = MAX_FILE_MB * 1024 * 1024;
@@ -39,7 +59,7 @@ export function validateFile(file) {
   if (!ACCEPTED_TYPES.has(file.type)) {
     return {
       valid: false,
-      reason: "Unsupported file type. Please select images (JPEG, PNG, WebP, GIF, HEIC) or videos (MP4, WebM, QuickTime)."
+      reason: "Unsupported file type. Please select images (JPEG, PNG, WebP, GIF, HEIC), videos (MP4, WebM, QuickTime), documents (PDF, DOC, DOCX, TXT), or archives (ZIP, RAR)."
     };
   }
   
@@ -63,6 +83,10 @@ export function getFileType(file) {
     return "image";
   } else if (VIDEO_TYPES.has(file.type)) {
     return "video";
+  } else if (DOCUMENT_TYPES.has(file.type)) {
+    return "document";
+  } else if (ARCHIVE_TYPES.has(file.type)) {
+    return "archive";
   }
   return "unknown";
 }

@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Button } from 'primereact/button';
 import { setSelectedChat, setChats, resetSelectedChat, updateUnreadCount, markChatAsRead } from '../actions/chatActions';
+import { CONFIG } from '../config';
 import { getSender } from '../config/ChatLogics';
 import GroupChatModal from './misc/GroupChatModal';
 import socketService from '../services/socketService';
@@ -22,7 +23,7 @@ const MyChats = () => {
     try {
       setIsRefreshing(true);
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/chat`, {
+      const response = await fetch(`${CONFIG.API_URL}/api/chat`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       
@@ -116,7 +117,7 @@ const MyChats = () => {
     if (chat.unreadCount > 0) {
       try {
 
-        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/message/chat/${chat._id}/read`, {
+        const response = await fetch(`${CONFIG.API_URL}/api/message/chat/${chat._id}/read`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,

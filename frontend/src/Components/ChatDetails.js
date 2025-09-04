@@ -38,15 +38,63 @@ const ChatDetails = ({ isOpen, chatId, onClose }) => {
   const toast = useRef(null);
   const navigate = useNavigate();
 
-  const { selectedChat, messages, ui } = useSelector((state) => state.chat);
+  const { selectedChat, ui } = useSelector((state) => state.chat);
   const { user } = useSelector((state) => state.user);
+  const { token } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
+  const [chatMessages, setChatMessages] = useState([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+
+  // Fetch messages for the current chat when ChatDetails opens
+  useEffect(() => {
+    if (isOpen && chatId && token) {
+      const fetchChatMessages = async () => {
+        try {
+          setIsLoadingMessages(true);
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/message/${chatId}`, {
+            method: 'GET',
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const messages = await response.json();
+            setChatMessages(messages);
+            console.log(`Fetched ${messages.length} messages for media extraction`);
+          } else {
+            console.error('Failed to fetch messages for media:', response.status);
+            setChatMessages([]);
+          }
+        } catch (error) {
+          console.error('Error fetching messages for media:', error);
+          setChatMessages([]);
+        } finally {
+          setIsLoadingMessages(false);
+        }
+      };
+      
+      fetchChatMessages();
+    } else if (!isOpen) {
+      // Clear messages when ChatDetails closes
+      setChatMessages([]);
+      setMediaData({ photos: [], videos: [], files: [] });
+    }
+  }, [isOpen, chatId, token]);
 
   useEffect(() => {
-    // Extract media from messages
-    const media = extractMedia(messages);
+    // Extract media from the fetched chat messages
+    const media = extractMedia(chatMessages);
+    console.log('Media extracted:', { 
+      chatId, 
+      messagesCount: chatMessages.length, 
+      photos: media.photos.length, 
+      videos: media.videos.length, 
+      files: media.files.length 
+    });
     setMediaData(media);
-  }, [messages]);
+  }, [chatMessages, chatId]);
 
   // Initialize edit form when opening
   useEffect(() => {
@@ -67,12 +115,12 @@ const ChatDetails = ({ isOpen, chatId, onClose }) => {
   // Search functionality
   useEffect(() => {
     if (searchQuery.trim()) {
-      const results = searchMessages(messages, searchQuery);
+      const results = searchMessages(chatMessages, searchQuery);
       setSearchResults(results);
     } else {
       setSearchResults([]);
     }
-  }, [searchQuery, messages]);
+  }, [searchQuery, chatMessages]);
 
   useEffect(() => {
     // Handle escape key
@@ -90,6 +138,12 @@ const ChatDetails = ({ isOpen, chatId, onClose }) => {
   if (!isOpen || !selectedChat) return null;
 
   // Debug log to help identify when ChatDetails is being rendered
+  console.log('ChatDetails render:', { 
+    isOpen, 
+    chatId, 
+    selectedChat: selectedChat ? { id: selectedChat._id, name: selectedChat.chatName } : null,
+    messages: chatMessages ? { count: chatMessages.length, sample: chatMessages[0] } : 'No messages'
+  });
 
 
   const isGroupChat = selectedChat?.isGroupChat;
@@ -97,16 +151,24 @@ const ChatDetails = ({ isOpen, chatId, onClose }) => {
   const otherUser = isGroupChat ? null : selectedChat?.users?.find(u => u._id !== user?._id);
   
   // Get last message timestamp
-  const lastMessage = messages && messages.length > 0 ? messages[messages.length - 1] : null;
+  const lastMessage = chatMessages && chatMessages.length > 0 ? chatMessages[chatMessages.length - 1] : null;
   const lastMessageTime = lastMessage?.createdAt || selectedChat?.updatedAt;
 
   const handleSearchInChat = () => {
     dispatch(toggleSearchInChat(!ui.isSearchOpen));
   };
 
-  const handleExportChat = (format) => {
-    dispatch(exportChat(chatId, format));
-    toast.current?.show({ severity: 'success', summary: 'Export Started', detail: `Downloading ${format.toUpperCase()} file...` });
+  const handleExportChat = async (format) => {
+    console.log('Export requested:', { format, chatId, messagesCount: chatMessages?.length || 0 });
+    
+    try {
+      // Pass the current messages to the export function
+      await dispatch(exportChat(chatId, format, chatMessages));
+      toast.current?.show({ severity: 'success', summary: 'Export Complete', detail: `${format.toUpperCase()} file downloaded successfully!` });
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.current?.show({ severity: 'error', summary: 'Export Failed', detail: 'Failed to export chat. Please try again.' });
+    }
   };
 
   const handleEditContact = () => {
@@ -279,9 +341,9 @@ const ChatDetails = ({ isOpen, chatId, onClose }) => {
           </div>
           <div className="header-actions">
             <Button
-              icon="pi pi-arrow-left"
-              onClick={() => navigate(-1)}
-              className="back-button"
+              icon="pi pi-times"
+              onClick={handleClose}
+              className="close-button"
               text
               size="small"
             />
@@ -318,32 +380,39 @@ const ChatDetails = ({ isOpen, chatId, onClose }) => {
           {/* Shared Media Section */}
           <div className="media-section">
             <h4 className="section-title">SHARED MEDIA</h4>
-            <TabView
-              activeIndex={activeTab}
-              onTabChange={(e) => setActiveTab(e.index)}
-              className="media-tabs"
-            >
-              <TabPanel header="Photos" leftIcon="pi pi-image">
-                <MediaGrid
-                  items={mediaData.photos}
-                  type="photo"
-                />
-              </TabPanel>
-              
-              <TabPanel header="Videos" leftIcon="pi pi-video">
-                <MediaGrid
-                  items={mediaData.videos}
-                  type="video"
-                />
-              </TabPanel>
-              
-              <TabPanel header="Files" leftIcon="pi pi-file">
-                <MediaGrid
-                  items={mediaData.files}
-                  type="file"
-                />
-              </TabPanel>
-            </TabView>
+            {isLoadingMessages ? (
+              <div className="media-loading">
+                <i className="pi pi-spin pi-spinner"></i>
+                <p>Loading media...</p>
+              </div>
+            ) : (
+              <TabView
+                activeIndex={activeTab}
+                onTabChange={(e) => setActiveTab(e.index)}
+                className="media-tabs"
+              >
+                <TabPanel header="Photos" leftIcon="pi pi-image">
+                  <MediaGrid
+                    items={mediaData.photos}
+                    type="photo"
+                  />
+                </TabPanel>
+                
+                <TabPanel header="Videos" leftIcon="pi pi-video">
+                  <MediaGrid
+                    items={mediaData.videos}
+                    type="video"
+                  />
+                </TabPanel>
+                
+                <TabPanel header="Files" leftIcon="pi pi-file">
+                  <MediaGrid
+                    items={mediaData.files}
+                    type="file"
+                  />
+                </TabPanel>
+              </TabView>
+            )}
           </div>
 
           {/* Actions Section */}

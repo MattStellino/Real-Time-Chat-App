@@ -117,8 +117,45 @@ const Chatpage = () => {
     setUserMenuOpen(false);
   };
 
-  if (!isAuthenticated) {
-    return null;
+  // Check authentication and redirect if needed
+  useEffect(() => {
+    // Check if we have stored authentication data
+    const storedToken = localStorage.getItem('persist:root');
+    const hasStoredAuth = storedToken && storedToken.includes('"isAuthenticated":true');
+    
+    if (!isAuthenticated || !user) {
+      console.log('Authentication check failed:', { 
+        isAuthenticated, 
+        user: !!user, 
+        hasStoredAuth,
+        storedToken: !!storedToken 
+      });
+      
+      // If we have stored auth but current state is false, wait for Redux to restore
+      if (hasStoredAuth) {
+        console.log('Waiting for Redux to restore authentication state...');
+        return;
+      }
+      
+      // Only redirect if we truly have no stored authentication
+      const timer = setTimeout(() => {
+        if (!isAuthenticated || !user) {
+          console.log('Redirecting to login - no stored authentication found');
+          navigate('/');
+        }
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  // Show loading while checking authentication
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner">Checking authentication...</div>
+      </div>
+    );
   }
 
   // Debug logging

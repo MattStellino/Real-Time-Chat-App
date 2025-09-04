@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Button } from 'primereact/button';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Chip } from 'primereact/chip';
+import { CONFIG } from '../config';
 import { logout } from '../actions/authActions';
 import { useNavigate } from 'react-router-dom';
 import { uploadFile } from '../lib/uploadFile';
@@ -263,7 +264,7 @@ const Composer = ({ onMessageSent }) => {
 
       
 
-              const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/message`, {
+              const response = await fetch(`${CONFIG.API_URL}/api/message`, {
         method: 'POST',
         headers: {
           'Content-type': 'application/json',
@@ -347,7 +348,7 @@ const Composer = ({ onMessageSent }) => {
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/*,video/*"
+        accept="image/*,video/*,.pdf,.doc,.docx,.txt,.zip,.rar"
         onChange={handleFileSelect}
         style={{ display: 'none' }}
       />
@@ -364,10 +365,25 @@ const Composer = ({ onMessageSent }) => {
                     alt={attachment.file.name}
                     className="composer__attachment-thumbnail"
                   />
-                ) : (
+                ) : attachment.type === 'video' ? (
                   <div className="composer__attachment-video">
                     <div className="composer__attachment-video-icon">📹</div>
                     <div className="composer__attachment-video-label">Video</div>
+                  </div>
+                ) : attachment.type === 'document' ? (
+                  <div className="composer__attachment-document">
+                    <div className="composer__attachment-document-icon">📄</div>
+                    <div className="composer__attachment-document-label">Document</div>
+                  </div>
+                ) : attachment.type === 'archive' ? (
+                  <div className="composer__attachment-archive">
+                    <div className="composer__attachment-archive-icon">📦</div>
+                    <div className="composer__attachment-archive-label">Archive</div>
+                  </div>
+                ) : (
+                  <div className="composer__attachment-unknown">
+                    <div className="composer__attachment-unknown-icon">📎</div>
+                    <div className="composer__attachment-unknown-label">File</div>
                   </div>
                 )}
                 
