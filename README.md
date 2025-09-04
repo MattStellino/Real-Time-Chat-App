@@ -69,7 +69,16 @@ cd frontend
 npm start
 ```
 
-5. **Open your browser**
+5. **Create a test user (optional but recommended)**
+```bash
+cd backend
+npm run seed:test
+```
+This creates a test user with credentials:
+- **Email:** `test@example.com`
+- **Password:** `test123456`
+
+6. **Open your browser**
 - Frontend: http://localhost:3000
 - Backend: http://localhost:5000
 
@@ -161,6 +170,22 @@ real-time-chat-app/
 
 ## 🧪 Testing
 
+### Quick Testing with Test User
+
+For immediate testing, use the pre-created test user:
+
+```bash
+# Create test user
+cd backend
+npm run seed:test
+```
+
+**Test User Credentials:**
+- **Email:** `test@example.com`
+- **Password:** `test123456`
+
+### Automated Tests
+
 ```bash
 # Frontend tests
 cd frontend
@@ -169,6 +194,16 @@ npm test
 # Backend tests (if implemented)
 npm test
 ```
+
+### Manual Testing Features
+
+With the test user, you can immediately test:
+- ✅ User authentication and login
+- ✅ Real-time messaging
+- ✅ Group chat creation
+- ✅ File uploads (images/videos)
+- ✅ User search functionality
+- ✅ Chat management features
 
 ## 📊 Performance
 

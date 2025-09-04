@@ -51,6 +51,19 @@ npm start
 ✅ **MongoDB sessions** working locally
 ✅ **All API endpoints** accessible locally
 
+## **5. Create Test User (Optional but Recommended):**
+
+```bash
+npm run seed:test
+```
+
+This creates a test user for easy testing:
+- **Email:** `test@example.com`
+- **Password:** `test123456`
+- **Username:** `TestUser`
+
+You can use these credentials to log in and test messaging functionality immediately!
+
 ## **Important Notes:**
 
 - **Replace `MONGO_URI`** with your actual MongoDB connection string
