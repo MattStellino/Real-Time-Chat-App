@@ -7,81 +7,139 @@ const User = require('../models/userModel');
 const generateToken = require('../config/generateToken');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
-const authenticateUser = require('../middleware/auth'); 
+const authenticateUser = require('../middleware/auth');
+const { validateRegistration, validateLogin } = require('../middleware/validation');
+const { 
+  registrationLimiter, 
+  enhancedLoginLimiter, 
+  recordFailedAttempt, 
+  clearFailedAttempts,
+  getClientId 
+} = require('../middleware/rateLimiter'); 
 
 /** POST /register
  * Creates new user account. Body: { username, email, password }
- * Returns: { _id, username, email, token } on success, 400 if user exists
+ * Returns: { success: true, message: string } on success, 400 if validation fails
  */
-router.post('/register', async (req, res) => {
+router.post('/register', registrationLimiter, validateRegistration, async (req, res) => {
     const { username, email, password } = req.body;
 
     try {
-        const userExists = await User.findOne({ email });
-        
-        if (userExists) {
-            res.status(400).send('User already exists');
-            return;
+        // Check if user already exists by email
+        const existingUserByEmail = await User.findOne({ email: email.toLowerCase() });
+        if (existingUserByEmail) {
+            return res.status(409).json({
+                success: false,
+                error: 'An account with this email already exists',
+                field: 'email'
+            });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // Check if username is already taken
+        const existingUserByUsername = await User.findOne({ username: username.toLowerCase() });
+        if (existingUserByUsername) {
+            return res.status(409).json({
+                success: false,
+                error: 'This username is already taken',
+                field: 'username'
+            });
+        }
+
+        // Hash password with higher salt rounds for better security
+        const hashedPassword = await bcrypt.hash(password, 12);
         
         const user = new User({
-            username,
-            email,
+            username: username.toLowerCase(),
+            email: email.toLowerCase(),
             password: hashedPassword,
         });
 
         await user.save();
         
-        const token = generateToken(user._id);
-        
-        const response = {
-            _id: user._id,
-            username: user.username,
-            email: user.email,
-            token: token,
-        };
-        res.status(201).json(response);
+        // Don't return token on registration - user should login
+        res.status(201).json({
+            success: true,
+            message: 'Account created successfully. Please login to continue.',
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email
+            }
+        });
     } catch (error) {
         console.error('Registration error:', error);
-        res.status(500).send('Error in creating user');
+        
+        // Handle specific MongoDB errors
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern)[0];
+            return res.status(409).json({
+                success: false,
+                error: `This ${field} is already in use`,
+                field: field
+            });
+        }
+        
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error. Please try again later.'
+        });
     }
 });
 
 /** POST /login
  * Authenticates user credentials. Body: { email, password }
- * Returns: { message, user: { _id, username, email, token } } on success, 401 on failure
+ * Returns: { success: true, user: { _id, username, email, token } } on success, 401 on failure
  */
-router.post('/login', async (req, res) => {
+router.post('/login', enhancedLoginLimiter, validateLogin, async (req, res) => {
     const { email, password } = req.body;
+    const clientId = getClientId(req);
 
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: email.toLowerCase() });
 
         if (!user) {
-            return res.status(401).json({ message: 'Authentication failed - user not found' });
+            // Record failed attempt even for non-existent users to prevent enumeration
+            recordFailedAttempt(email.toLowerCase(), clientId);
+            return res.status(401).json({ 
+                success: false,
+                error: 'Invalid email or password'
+            });
         }
 
         const isPasswordMatch = await user.matchPassword(password);
 
         if (isPasswordMatch) {
+            // Clear any failed attempts on successful login
+            clearFailedAttempts(email.toLowerCase());
+            
             const userInfo = {
                 _id: user._id,
                 username: user.username,
                 email: user.email,
                 token: generateToken(user._id),
             };
+            
             return res.status(200).json({
-                message: 'Authentication successful',
+                success: true,
+                message: 'Login successful',
                 user: userInfo
             });
         } else {
-            return res.status(401).json({ message: 'Authentication failed - incorrect password' });
+            // Record failed attempt
+            const attempts = recordFailedAttempt(email.toLowerCase(), clientId);
+            
+            return res.status(401).json({ 
+                success: false,
+                error: 'Invalid email or password',
+                attemptsRemaining: Math.max(0, 5 - attempts)
+            });
         }
     } catch (err) {
         console.error('Authentication error:', err);
-        return res.status(500).json({ message: 'Server error during authentication' });
+        return res.status(500).json({ 
+            success: false,
+            error: 'Internal server error. Please try again later.'
+        });
     }
 });
 

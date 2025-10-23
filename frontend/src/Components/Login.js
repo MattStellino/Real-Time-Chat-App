@@ -9,6 +9,8 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [attemptsRemaining, setAttemptsRemaining] = useState(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -16,9 +18,18 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setFieldErrors({});
+    setAttemptsRemaining(null);
 
     if (!email || !password) {
       setError('Please enter all fields');
+      setLoading(false);
+      return;
+    }
+
+    // Basic email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setFieldErrors({ email: 'Please enter a valid email address' });
       setLoading(false);
       return;
     }
@@ -30,9 +41,9 @@ const Login = () => {
         body: JSON.stringify({ email, password })
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      const data = await response.json();
 
+      if (response.ok && data.success) {
         dispatch({ type: 'USER_LOGIN', payload: { token: data.user.token } });
         dispatch({ type: 'SET_USER', payload: data.user });
         dispatch(loginUser(data.user));
@@ -40,10 +51,20 @@ const Login = () => {
         setPassword('');
         navigate('/chats');
       } else {
-        setError('Login failed. Please check your credentials.');
+        setError(data.error || 'Login failed. Please check your credentials.');
+        
+        // Show attempts remaining if provided
+        if (data.attemptsRemaining !== undefined) {
+          setAttemptsRemaining(data.attemptsRemaining);
+        }
+        
+        // Handle rate limiting
+        if (response.status === 429) {
+          setError(data.error || 'Too many login attempts. Please try again later.');
+        }
       }
     } catch (error) {
-      setError('Network error. Please try again.');
+      setError('Network error. Please check your connection and try again.');
     }
 
     setLoading(false);
@@ -52,18 +73,29 @@ const Login = () => {
   return (
     <form onSubmit={handleSubmit} className="auth-form">
       {error && <div className="error-message">{error}</div>}
+      {attemptsRemaining !== null && attemptsRemaining > 0 && (
+        <div className="warning-message">
+          {attemptsRemaining} attempts remaining before account lockout
+        </div>
+      )}
       
       <div className="form-group">
         <label htmlFor="email" className="form-label">Email</label>
         <input
           id="email"
           type="email"
-          className="form-input"
+          className={`form-input ${fieldErrors.email ? 'error' : ''}`}
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (fieldErrors.email) {
+              setFieldErrors(prev => ({ ...prev, email: '' }));
+            }
+          }}
           placeholder="Enter your email"
           required
         />
+        {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
       </div>
       
       <div className="form-group">
